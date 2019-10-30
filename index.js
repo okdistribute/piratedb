@@ -1,3 +1,7 @@
+/**
+ * Much of this code was written by noffle in the kappa-osm module.
+ * see: https://github.com/digidem/kappa-osm
+ **/
 module.exports = EchoDB
 
 var randomBytes = require('randombytes')
