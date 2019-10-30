@@ -21,7 +21,6 @@
     "randombytes": "^2.1.0",
     "subleveldown": "^4.1.4",
     "through2": "^3.0.1",
-    "uniq": "^1.0.1",
     "unordered-materialized-kv": "^1.2.1"
   },
   "devDependencies": {

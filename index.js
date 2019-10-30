@@ -7,7 +7,6 @@ module.exports = EchoDB
 var randomBytes = require('randombytes')
 var sub = require('subleveldown')
 var once = require('once')
-var uniq = require('uniq')
 var EventEmitter = require('events').EventEmitter
 var through = require('through2')
 var pumpify = require('pumpify')
