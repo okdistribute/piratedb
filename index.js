@@ -180,10 +180,7 @@ EchoDB.prototype.del = function (id, element, opts, cb) {
     getElms(links, function (err, elms) {
       if (err) return cb(err)
       if (!elms.length) return cb(new Error('no elements exist with id ' + id))
-      var refs = self._mergeElementRefsAndMembers(elms)
       var doc = Object.assign({}, element, { id: id, deleted: true, type: elms[0].type, links: links })
-      if (refs.refs) doc.refs = refs.refs
-      else if (refs.members) doc.members = refs.members
       write(doc, cb)
     })
   })
@@ -241,29 +238,10 @@ EchoDB.prototype.batch = function (ops, cb) {
   var self = this
   cb = once(cb)
 
-  populateWayRelationRefs(function (err) {
+  populateMissingLinks(function (err) {
     if (err) return cb(err)
-    populateMissingLinks(function (err) {
-      if (err) return cb(err)
-      writeData(cb)
-    })
+    writeData(cb)
   })
-
-  // First, populate way & relation deletions with correct refs/members.
-  function populateWayRelationRefs (cb) {
-    var pending = 0
-    var error
-    for (var i = 0; i < ops.length; i++) {
-      if (ops[i].type === 'del') {
-        pending++
-        updateRefs(ops[i].id, ops[i].value.links || [], ops[i].value, function (err) {
-          if (err) error = err
-          if (!--pending) cb(error)
-        })
-      }
-    }
-    if (!pending) cb()
-  }
 
   function populateMissingLinks (cb) {
     var pending = 1
@@ -304,18 +282,6 @@ EchoDB.prototype.batch = function (ops, cb) {
     })
   }
 
-  function updateRefs (id, links, elm, cb) {
-    if (links) self._getRefsMembersByVersions(links, done)
-    else self._getRefsMembersById(id, done)
-
-    function done (err, res) {
-      if (err) return cb(err)
-      if (res.refs) elm.refs = res.refs
-      else if (res.members) elm.members = res.members
-      cb()
-    }
-  }
-
   function osmOpToMsg (op) {
     if (op.type === 'put') {
       return Object.assign({}, op.value, { id: op.id })
@@ -332,14 +298,6 @@ EchoDB.prototype.getChanges = function (id, cb) {
   var self = this
   this.core.api.changeset.ready(function () {
     self.core.api.changeset.get(id, cb)
-  })
-}
-
-// Id -> { id, version }
-EchoDB.prototype.refs = function (id, cb) {
-  var self = this
-  this.core.api.refs.ready(function () {
-    self.core.api.refs.get(id, cb)
   })
 }
 
@@ -366,69 +324,6 @@ EchoDB.prototype.byType = function (type, opts) {
 
 EchoDB.prototype.replicate = function (opts) {
   return this.core.replicate(opts)
-}
-
-// EchoDBId -> {refs: [EchoDBId]} | {members: [EchoDBId]} | {}
-EchoDB.prototype._mergeElementRefsAndMembers = function (elms) {
-  var res = {}
-  for (var i = 0; i < elms.length; i++) {
-    var elm = elms[i]
-    if (elm.refs) {
-      res.refs = res.refs || []
-      mergeRefs(res.refs, elm.refs)
-    } else if (elm.members) {
-      res.members = res.members || []
-      mergeMembers(res.members, elm.members)
-    }
-  }
-  return res
-
-  function mergeRefs (into, from) {
-    into.push.apply(into, from)
-    return uniq(into)
-  }
-
-  function mergeMembers (into, from) {
-    into.push.apply(into, from)
-    return uniq(into, memberCmp)
-  }
-
-  function memberCmp (a, b) {
-    return a.id === b.id ? 0 : -1
-  }
-}
-
-// EchoDBId -> {refs: [EchoDBId]} | {members: [EchoDBId]} | {}
-EchoDB.prototype._getRefsMembersById = function (id, cb) {
-  var self = this
-  this.get(id, function (err, elms) {
-    if (err || !elms || !elms.length) return cb(err, {})
-    var res = self._mergeElementRefsAndMembers(elms)
-    cb(null, res)
-  })
-}
-
-// [EchoDBVersion] -> {refs: [EchoDBId]} | {members: [EchoDBId]} | {}
-EchoDB.prototype._getRefsMembersByVersions = function (versions, cb) {
-  var self = this
-  if (!versions.length) return process.nextTick(cb, null, [])
-
-  var elms = []
-  var error
-  var pending = versions.length
-  for (var i = 0; i < versions.length; i++) {
-    self.getByVersion(versions[i], onElm)
-  }
-
-  function onElm (err, elm) {
-    if (err) error = err
-    if (elm) elms.push(elm)
-    if (--pending) return
-    if (error) return cb(error)
-
-    var res = self._mergeElementRefsAndMembers(elms)
-    cb(null, res)
-  }
 }
 
 /*
