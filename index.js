@@ -262,7 +262,7 @@ EchoDB.prototype.batch = function (ops, cb) {
   }
 
   function writeData (cb) {
-    var batch = ops.map(osmOpToMsg)
+    var batch = ops.map(opToMsg)
 
     self._ready(function () {
       var key = self.writer.key.toString('hex')
@@ -281,7 +281,7 @@ EchoDB.prototype.batch = function (ops, cb) {
     })
   }
 
-  function osmOpToMsg (op) {
+  function opToMsg (op) {
     if (op.type === 'put') {
       return Object.assign({}, op.value, { id: op.id })
     } else if (op.type === 'del') {
@@ -290,14 +290,6 @@ EchoDB.prototype.batch = function (ops, cb) {
       cb(new Error('unknown type'))
     }
   }
-}
-
-// Id -> { id, version }
-EchoDB.prototype.getChanges = function (id, cb) {
-  var self = this
-  this.core.api.changeset.ready(function () {
-    self.core.api.changeset.get(id, cb)
-  })
 }
 
 EchoDB.prototype.byType = function (type, opts) {
