@@ -19,8 +19,9 @@ module (but we won't do that).
   this item
   - callback returns new item with updated .version 
 #### `.get(opts, cb)`
-  - callback returns item that matches given options
+  - callback returns items that matches given options
   - e.g., {id: ...} or {version: ...}
+  
 #### `.del(id, cb)`
   - deletes item at id which sets {deleted: true} property
 #### `.replicate(opts)`
