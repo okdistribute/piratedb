@@ -1,8 +1,6 @@
-# ECHO
+# piratedb
 
-Eventually Consistent Hierarchical Objects.
-
-The future of P2P replication.
+A peer-to-peer database with backwards links with a last-writer-wins CRDT.
 
 ## Details
 
