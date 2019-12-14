@@ -1,6 +1,6 @@
 # piratedb
 
-A peer-to-peer database with backwards links with a last-writer-wins CRDT.
+A multiwriter peer-to-peer database with a last-writer-wins CRDT.
 
 ## Details
 
